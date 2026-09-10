@@ -4,7 +4,7 @@
     "slug": "apex-global-academy",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/ic.png",
     "scheme": "apexmobileapp",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -38,6 +38,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3a08a0e8-9e81-45c1-8a4e-df120f256a1c"
+      }
+    },
+    "owner": "abdullahihmuaz"
   }
 }
