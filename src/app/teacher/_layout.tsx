@@ -1,5 +1,11 @@
 import { Tabs } from "expo-router";
-import { Home, Users, Calendar, BookOpen, MessageCircle } from "lucide-react-native";
+import {
+  Home,
+  Users,
+  Calendar,
+  BookOpen,
+  MoreHorizontal,
+} from "lucide-react-native";
 import { colors } from "../../constants/colors";
 
 export default function TeacherLayout() {
@@ -20,11 +26,53 @@ export default function TeacherLayout() {
         tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
       }}
     >
-      <Tabs.Screen name="dashboard" options={{ title: "Home", tabBarIcon: ({ color, size }) => <Home size={size} color={color} /> }} />
-      <Tabs.Screen name="pupils" options={{ title: "Pupils", tabBarIcon: ({ color, size }) => <Users size={size} color={color} /> }} />
-      <Tabs.Screen name="attendance" options={{ title: "Attendance", tabBarIcon: ({ color, size }) => <Calendar size={size} color={color} /> }} />
-      <Tabs.Screen name="results" options={{ title: "Results", tabBarIcon: ({ color, size }) => <BookOpen size={size} color={color} /> }} />
-      <Tabs.Screen name="messages" options={{ title: "Messages", tabBarIcon: ({ color, size }) => <MessageCircle size={size} color={color} /> }} />
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="pupils"
+        options={{
+          title: "Pupils",
+          tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="attendance"
+        options={{
+          title: "Attendance",
+          tabBarIcon: ({ color, size }) => (
+            <Calendar size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="results"
+        options={{
+          title: "Results",
+          tabBarIcon: ({ color, size }) => (
+            <BookOpen size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: "More",
+          tabBarIcon: ({ color, size }) => (
+            <MoreHorizontal size={size} color={color} />
+          ),
+        }}
+      />
+
+      {/* Hidden screens - only accessible via More */}
+      <Tabs.Screen name="message" options={{ href: null }} />
+      <Tabs.Screen name="scheme" options={{ href: null }} />
+      <Tabs.Screen name="lessons" options={{ href: null }} />
+      <Tabs.Screen name="announcements" options={{ href: null }} />
     </Tabs>
   );
 }

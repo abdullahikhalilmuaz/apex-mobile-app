@@ -14,15 +14,22 @@ function RootNavigator() {
   useEffect(() => {
     if (loading) return;
 
-    if (!user) {
+    const onAuthScreen =
+      segments[0] === undefined || segments[0] === "register";
+
+    // No user → force to login (unless already on login/register)
+    if (!user && !onAuthScreen) {
       router.replace("/");
       return;
     }
 
-    const role = user.role;
-    const target = `/${role}/dashboard`;
-    router.replace(target as any);
-  }, [user, loading]);
+    // Logged-in user → force to dashboard (only if on auth screen)
+    if (user && onAuthScreen) {
+      const role = user.role;
+      const target = `/${role}/dashboard`;
+      router.replace(target as any);
+    }
+  }, [user, loading, segments]);
 
   if (loading) {
     return (

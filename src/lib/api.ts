@@ -31,7 +31,7 @@ api.interceptors.response.use(
       console.error("Network error");
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

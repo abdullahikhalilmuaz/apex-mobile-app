@@ -8,9 +8,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import { useAuth } from "../hooks/useAuth";
 import { colors, gradients, spacing, radius } from "../constants/colors";
 import Toast from "react-native-toast-message";
@@ -21,6 +21,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const router = useRouter();
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -114,6 +115,16 @@ export default function LoginScreen() {
                 )}
               </LinearGradient>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/register")}
+              style={styles.linkWrap}
+            >
+              <Text style={styles.linkText}>
+                Don't have an account?{" "}
+                <Text style={styles.linkAccent}>Create Account</Text>
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <Text style={styles.footer}>Better Education · Brighter Future</Text>
@@ -194,6 +205,18 @@ const styles = StyleSheet.create({
   buttonText: {
     color: colors.white,
     fontSize: 16,
+    fontWeight: "600",
+  },
+  linkWrap: {
+    marginTop: spacing.md,
+    alignItems: "center",
+  },
+  linkText: {
+    color: colors.textMuted,
+    fontSize: 13,
+  },
+  linkAccent: {
+    color: colors.accent,
     fontWeight: "600",
   },
   footer: {
