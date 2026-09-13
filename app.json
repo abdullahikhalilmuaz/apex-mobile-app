@@ -8,9 +8,11 @@
     "scheme": "apexmobileapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/icon.png"
+      "icon": "./assets/images/icon.png",
+      "bundleIdentifier": "com.abdullahihmuaz.apexglobalacademy"
     },
     "android": {
+      "package": "com.abdullahihmuaz.apexglobalacademy",
       "adaptiveIcon": {
         "backgroundColor": "#0f0c29",
         "foregroundImage": "./assets/images/icon.png",
