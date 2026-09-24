@@ -7,6 +7,10 @@
     "icon": "./assets/images/icon.png",
     "scheme": "apexmobileapp",
     "userInterfaceStyle": "automatic",
+    "notification": {
+      "icon": "./assets/images/icon.png",
+      "color": "#667eea"
+    },
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.abdullahihmuaz.apexglobalacademy"
@@ -35,7 +39,8 @@
         }
       ],
       "expo-status-bar",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,

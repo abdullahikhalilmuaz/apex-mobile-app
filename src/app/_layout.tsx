@@ -5,11 +5,20 @@ import Toast from "react-native-toast-message";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useEffect } from "react";
 import { View, ActivityIndicator } from "react-native";
+import UpdateModal from "../components/UpdateModal";
+import { useAppVersion } from "../hooks/useAppVersion";
+import { usePushNotifications } from "../hooks/usePushNotifications";
+
+function PushSetup({ userId }: { userId?: string }) {
+  usePushNotifications(userId);
+  return null;
+}
 
 function RootNavigator() {
   const { user, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const { result, shouldShow, dismiss } = useAppVersion();
 
   useEffect(() => {
     if (loading) return;
@@ -17,13 +26,11 @@ function RootNavigator() {
     const onAuthScreen =
       segments[0] === undefined || segments[0] === "register";
 
-    // No user → force to login (unless already on login/register)
     if (!user && !onAuthScreen) {
       router.replace("/");
       return;
     }
 
-    // Logged-in user → force to dashboard (only if on auth screen)
     if (user && onAuthScreen) {
       const role = user.role;
       const target = `/${role}/dashboard`;
@@ -46,13 +53,28 @@ function RootNavigator() {
     );
   }
 
+  const isForce = result?.status === "force";
+  const info =
+    result?.status === "soft" || result?.status === "force"
+      ? result.info
+      : null;
+
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: "#0f0c29" },
-      }}
-    />
+    <>
+      <PushSetup userId={user?.id} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: "#0f0c29" },
+        }}
+      />
+      <UpdateModal
+        visible={shouldShow}
+        force={isForce}
+        info={info}
+        onDismiss={dismiss}
+      />
+    </>
   );
 }
 
