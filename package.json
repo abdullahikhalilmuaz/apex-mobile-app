@@ -9,7 +9,7 @@
     "@react-native-picker/picker": "2.11.4",
     "@react-navigation/bottom-tabs": "^7.19.2",
     "axios": "^1.20.0",
-    "expo": "~57.0.21",
+    "expo": "~57.0.25",
     "expo-constants": "~57.0.17",
     "expo-dev-client": "~57.0.18",
     "expo-device": "~57.0.2",

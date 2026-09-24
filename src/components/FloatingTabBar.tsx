@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
@@ -7,17 +7,23 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { colors, gradients, radius, spacing } from "../constants/colors";
+import { useAuth } from "../hooks/useAuth";
+
+// Visible tabs PER ROLE — no cross-contamination
+const TABS_BY_ROLE: Record<string, string[]> = {
+  teacher: ["dashboard", "pupils", "attendance", "results", "more"],
+  headmaster: ["dashboard", "pupils", "announcements", "results", "messages"],
+  parent: ["dashboard", "children", "announcements", "messages"],
+};
 
 function TabButton({
   isActive,
   onPress,
   icon,
-  label,
 }: {
   isActive: boolean;
   onPress: () => void;
   icon: React.ReactNode;
-  label: string;
 }) {
   const scale = useSharedValue(1);
 
@@ -25,19 +31,11 @@ function TabButton({
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePressIn = () => {
-    scale.value = withSpring(0.9, { damping: 15 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15 });
-  };
-
   return (
     <TouchableOpacity
       onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      onPressIn={() => (scale.value = withSpring(0.9, { damping: 15 }))}
+      onPressOut={() => (scale.value = withSpring(1, { damping: 15 }))}
       activeOpacity={0.8}
       style={styles.tabButton}
     >
@@ -64,10 +62,14 @@ export default function FloatingTabBar({
   descriptors,
   navigation,
 }: BottomTabBarProps) {
-  const visibleRoutes = state.routes.filter((route) => {
-    const options = descriptors[route.key].options as any;
-    return options.href !== null;
-  });
+  const { user } = useAuth();
+  const role = user?.role ?? "parent";
+
+  const allowedTabs = TABS_BY_ROLE[role] || [];
+
+  const visibleRoutes = state.routes.filter((route) =>
+    allowedTabs.includes(route.name),
+  );
 
   return (
     <View style={styles.wrapper} pointerEvents="box-none">
@@ -76,20 +78,12 @@ export default function FloatingTabBar({
           const { options } = descriptors[route.key];
           const isFocused = state.routes[state.index].key === route.key;
 
-          const label =
-            typeof options.tabBarLabel === "string"
-              ? options.tabBarLabel
-              : typeof options.title === "string"
-              ? options.title
-              : route.name;
-
           const onPress = () => {
             const event = navigation.emit({
               type: "tabPress",
               target: route.key,
               canPreventDefault: true,
             });
-
             if (!isFocused && !event.defaultPrevented) {
               navigation.navigate(route.name, route.params);
             }
@@ -107,7 +101,6 @@ export default function FloatingTabBar({
               isActive={isFocused}
               onPress={onPress}
               icon={icon}
-              label={label}
             />
           );
         })}
@@ -129,7 +122,6 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-around",
     backgroundColor: "rgba(20,20,40,0.95)",
     borderWidth: 1,
     borderColor: colors.glassBorder,
@@ -138,7 +130,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     width: "100%",
     maxWidth: 480,
-    // Shadow
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
@@ -149,11 +140,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    minWidth: 56,
   },
-  tabInner: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  tabInner: { alignItems: "center", justifyContent: "center" },
   activePill: {
     width: 52,
     height: 40,
@@ -164,6 +153,7 @@ const styles = StyleSheet.create({
   inactivePill: {
     width: 52,
     height: 40,
+    borderRadius: radius.full,
     alignItems: "center",
     justifyContent: "center",
   },

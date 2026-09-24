@@ -17,6 +17,9 @@ import {
   MessageCircle,
   LogOut,
   ChevronRight,
+  AlarmClock,
+  Users,
+  ClipboardList,
 } from "lucide-react-native";
 
 export default function TeacherMore() {
@@ -24,6 +27,18 @@ export default function TeacherMore() {
   const { logout } = useAuth();
 
   const menuItems = [
+    {
+      icon: Users,
+      label: "Students",
+      subtitle: "Manage class roster",
+      route: "/teacher/students",
+    },
+    {
+      icon: ClipboardList,
+      label: "Assignments",
+      subtitle: "Post homework to class",
+      route: "/teacher/assignments",
+    },
     {
       icon: BookOpen,
       label: "Scheme of Work",
@@ -47,6 +62,12 @@ export default function TeacherMore() {
       label: "Messages",
       subtitle: "Chat with headmaster",
       route: "/teacher/message",
+    },
+    {
+      icon: AlarmClock,
+      label: "Class Alarms",
+      subtitle: "Schedule class reminders",
+      route: "/teacher/alarms",
     },
   ];
 
@@ -102,11 +123,7 @@ export default function TeacherMore() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: 120 },
-  title: {
-    color: colors.white,
-    fontSize: 26,
-    fontWeight: "700",
-  },
+  title: { color: colors.white, fontSize: 26, fontWeight: "700" },
   subtitle: {
     color: colors.textMuted,
     fontSize: 14,
@@ -133,17 +150,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  logoutIcon: {
-    backgroundColor: colors.errorBg,
-  },
-  itemLabel: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  itemSubtitle: {
-    color: colors.textMuted,
-    fontSize: 12,
-    marginTop: 2,
-  },
+  logoutIcon: { backgroundColor: colors.errorBg },
+  itemLabel: { color: colors.white, fontSize: 16, fontWeight: "600" },
+  itemSubtitle: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
 });

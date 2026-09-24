@@ -1,20 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import * as Notifications from "expo-notifications";
-import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import api from "../lib/api";
 
-// Show notifications when app is in foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Detect if we're running in Expo Go (no native notifications)
+const isExpoGo = Constants.appOwnership === "expo";
 
 export function usePushNotifications(userId?: string) {
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
@@ -23,18 +13,39 @@ export function usePushNotifications(userId?: string) {
   const responseListener = useRef<any>();
 
   useEffect(() => {
+    // Skip entirely in Expo Go — no native module available
+    if (isExpoGo) {
+      console.log("Push notifications skipped (running in Expo Go)");
+      return;
+    }
+
     if (!userId) return;
 
     let mounted = true;
+    let Notifications: any;
+    let Device: any;
 
     async function register() {
       try {
+        // Lazy import — only loads when NOT in Expo Go
+        Notifications = await import("expo-notifications");
+        Device = await import("expo-device");
+
+        Notifications.setNotificationHandler({
+          handleNotification: async () => ({
+            shouldShowAlert: true,
+            shouldPlaySound: true,
+            shouldSetBadge: false,
+            shouldShowBanner: true,
+            shouldShowList: true,
+          }),
+        });
+
         if (!Device.isDevice) {
           setError("Must use a physical device for push notifications");
           return;
         }
 
-        // Request permission
         const { status: existingStatus } =
           await Notifications.getPermissionsAsync();
         let finalStatus = existingStatus;
@@ -49,7 +60,6 @@ export function usePushNotifications(userId?: string) {
           return;
         }
 
-        // Android notification channel
         if (Platform.OS === "android") {
           await Notifications.setNotificationChannelAsync("default", {
             name: "Default",
@@ -59,10 +69,9 @@ export function usePushNotifications(userId?: string) {
           });
         }
 
-        // Get Expo push token — needs projectId from EAS
         const projectId =
           Constants?.expoConfig?.extra?.eas?.projectId ??
-          Constants?.easConfig?.projectId;
+          (Constants as any)?.easConfig?.projectId;
 
         if (!projectId) {
           setError("EAS projectId missing in app.json");
@@ -74,10 +83,8 @@ export function usePushNotifications(userId?: string) {
         });
 
         const token = tokenData.data;
-
         if (mounted) setExpoPushToken(token);
 
-        // Register with backend
         await api.post("/notifications/register", {
           token,
           device: Platform.OS,
@@ -92,27 +99,34 @@ export function usePushNotifications(userId?: string) {
 
     register();
 
-    // Listen for incoming notifications while app is foreground
-    notificationListener.current =
-      Notifications.addNotificationReceivedListener((notification) => {
-        console.log("Notification received (foreground):", notification);
-      });
-
-    // Listen for user tapping a notification
-    responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log("Notification tapped:", response);
-        // Later: navigate based on response.notification.request.content.data
-      });
+    // Foreground + tap listeners — also guarded
+    (async () => {
+      try {
+        const N = await import("expo-notifications");
+        notificationListener.current = N.addNotificationReceivedListener(
+          (notification: any) => {
+            console.log("Notification received (foreground):", notification);
+          },
+        );
+        responseListener.current = N.addNotificationResponseReceivedListener(
+          (response: any) => {
+            console.log("Notification tapped:", response);
+          },
+        );
+      } catch {}
+    })();
 
     return () => {
       mounted = false;
-      if (notificationListener.current)
-        Notifications.removeNotificationSubscription(
-          notificationListener.current,
-        );
-      if (responseListener.current)
-        Notifications.removeNotificationSubscription(responseListener.current);
+      (async () => {
+        try {
+          const N = await import("expo-notifications");
+          if (notificationListener.current)
+            N.removeNotificationSubscription(notificationListener.current);
+          if (responseListener.current)
+            N.removeNotificationSubscription(responseListener.current);
+        } catch {}
+      })();
     };
   }, [userId]);
 

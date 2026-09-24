@@ -62,10 +62,14 @@ export default function TeacherLayout() {
         }}
       />
 
+      {/* Hidden screens */}
       <Tabs.Screen name="message" options={{ href: null }} />
       <Tabs.Screen name="scheme" options={{ href: null }} />
       <Tabs.Screen name="lessons" options={{ href: null }} />
       <Tabs.Screen name="announcements" options={{ href: null }} />
+      <Tabs.Screen name="alarms" options={{ href: null }} />
+      <Tabs.Screen name="students" options={{ href: null }} />
+      <Tabs.Screen name="assignments" options={{ href: null }} />
     </Tabs>
   );
 }
