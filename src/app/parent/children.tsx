@@ -180,7 +180,7 @@ export default function ParentChildren() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: spacing.lg, paddingTop: spacing.xxl },
+  scroll: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: 120 },
   header: {
     flexDirection: "row",
     alignItems: "center",

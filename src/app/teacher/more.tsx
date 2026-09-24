@@ -1,4 +1,10 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { colors, gradients, spacing, radius } from "../../constants/colors";
@@ -81,7 +87,9 @@ export default function TeacherMore() {
                 <Text style={[styles.itemLabel, { color: colors.error }]}>
                   Logout
                 </Text>
-                <Text style={styles.itemSubtitle}>Sign out of your account</Text>
+                <Text style={styles.itemSubtitle}>
+                  Sign out of your account
+                </Text>
               </View>
             </View>
           </GlassCard>
@@ -93,7 +101,7 @@ export default function TeacherMore() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: spacing.lg, paddingTop: spacing.xxl },
+  scroll: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: 120 },
   title: {
     color: colors.white,
     fontSize: 26,

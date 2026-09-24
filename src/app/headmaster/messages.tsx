@@ -68,7 +68,7 @@ export default function HeadmasterMessages() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: spacing.lg, paddingTop: spacing.xxl },
+  scroll: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: 120 },
   title: { color: colors.white, fontSize: 26, fontWeight: "700" },
   subtitle: { color: colors.textMuted, fontSize: 14, marginBottom: spacing.lg },
   sender: {

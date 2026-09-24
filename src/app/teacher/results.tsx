@@ -48,7 +48,7 @@ export default function TeacherResults() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: spacing.lg, paddingTop: spacing.xxl },
+  scroll: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: 120 },
   title: { color: colors.white, fontSize: 26, fontWeight: "700" },
   subtitle: { color: colors.textMuted, fontSize: 14, marginBottom: spacing.lg },
   name: { color: colors.white, fontSize: 16, fontWeight: "600" },

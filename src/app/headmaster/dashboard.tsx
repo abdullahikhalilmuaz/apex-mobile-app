@@ -83,7 +83,7 @@ export default function HeadmasterDashboard() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: spacing.lg, paddingTop: spacing.xxl },
+  scroll: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: 120 },
   welcome: { color: colors.textMuted, fontSize: 15 },
   name: {
     color: colors.white,

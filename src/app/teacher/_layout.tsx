@@ -7,23 +7,17 @@ import {
   MoreHorizontal,
 } from "lucide-react-native";
 import { colors } from "../../constants/colors";
+import FloatingTabBar from "../../components/FloatingTabBar";
 
 export default function TeacherLayout() {
   return (
     <Tabs
+      tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: "rgba(20,20,40,0.95)",
-          borderTopColor: colors.glassBorder,
-          borderTopWidth: 1,
-          height: 65,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
+        tabBarStyle: { display: "none" },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textDim,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
       }}
     >
       <Tabs.Screen
@@ -68,7 +62,6 @@ export default function TeacherLayout() {
         }}
       />
 
-      {/* Hidden screens - only accessible via More */}
       <Tabs.Screen name="message" options={{ href: null }} />
       <Tabs.Screen name="scheme" options={{ href: null }} />
       <Tabs.Screen name="lessons" options={{ href: null }} />

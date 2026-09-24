@@ -225,11 +225,7 @@ export default function TeacherAttendance() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: {
-    padding: spacing.lg,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.xxl,
-  },
+  scroll: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: 120 },
   title: { color: colors.white, fontSize: 26, fontWeight: "700" },
   subtitle: { color: colors.textMuted, fontSize: 14, marginBottom: spacing.lg },
   empty: { color: colors.textMuted, textAlign: "center" },

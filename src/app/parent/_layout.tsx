@@ -1,23 +1,17 @@
 import { Tabs } from "expo-router";
 import { Home, Users, Bell, MessageCircle } from "lucide-react-native";
 import { colors } from "../../constants/colors";
+import FloatingTabBar from "../../components/FloatingTabBar";
 
 export default function ParentLayout() {
   return (
     <Tabs
+      tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: "rgba(20,20,40,0.95)",
-          borderTopColor: colors.glassBorder,
-          borderTopWidth: 1,
-          height: 65,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
+        tabBarStyle: { display: "none" },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textDim,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
       }}
     >
       <Tabs.Screen
@@ -51,12 +45,7 @@ export default function ParentLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="children/[id]"
-        options={{
-          href: null,
-        }}
-      />
+      <Tabs.Screen name="children/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

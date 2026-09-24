@@ -10,13 +10,19 @@ export default function HeadmasterPupils() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get("/pupils")
+    api
+      .get("/pupils")
       .then((res) => setPupils(res.data))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <LinearGradient colors={gradients.background} style={styles.container}><ActivityIndicator color={colors.primary} /></LinearGradient>;
+  if (loading)
+    return (
+      <LinearGradient colors={gradients.background} style={styles.container}>
+        <ActivityIndicator color={colors.primary} />
+      </LinearGradient>
+    );
 
   return (
     <LinearGradient colors={gradients.background} style={styles.container}>
@@ -26,7 +32,9 @@ export default function HeadmasterPupils() {
         {pupils.map((p) => (
           <GlassCard key={p._id} style={{ marginBottom: spacing.md }}>
             <Text style={styles.name}>{p.name}</Text>
-            <Text style={styles.meta}>{p.class} · {p.admissionNumber}</Text>
+            <Text style={styles.meta}>
+              {p.class} · {p.admissionNumber}
+            </Text>
           </GlassCard>
         ))}
       </ScrollView>
@@ -36,7 +44,7 @@ export default function HeadmasterPupils() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: spacing.lg, paddingTop: spacing.xxl },
+  scroll: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: 120 },
   title: { color: colors.white, fontSize: 26, fontWeight: "700" },
   subtitle: { color: colors.textMuted, fontSize: 14, marginBottom: spacing.lg },
   name: { color: colors.white, fontSize: 16, fontWeight: "600" },
