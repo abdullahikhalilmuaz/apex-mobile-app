@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "apexmobileapp",
     "userInterfaceStyle": "automatic",
-    
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.abdullahihmuaz.apexglobalacademy"
@@ -37,7 +36,9 @@
       ],
       "expo-status-bar",
       "expo-sharing",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-image",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
