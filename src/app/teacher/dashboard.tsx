@@ -1,18 +1,21 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect } from "expo-router";
+import { Users, CheckCircle, Clock, MessageCircle } from "lucide-react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { colors, gradients, spacing } from "../../constants/colors";
-import { Users, CheckCircle, Clock, MessageCircle } from "lucide-react-native";
 import StatCard from "../../components/StatCard";
 import GlassCard from "../../components/GlassCard";
 import api from "../../lib/api";
+import appApi from "../../lib/appApi";
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
@@ -23,14 +26,48 @@ export default function TeacherDashboard() {
     messages: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    api
-      .get("/dashboard/teacher-stats")
-      .then((res) => setStats(res.data))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+  const load = async () => {
+    try {
+      // 1. Get teacher's class from general backend
+      const generalRes = await api
+        .get("/dashboard/teacher-stats")
+        .catch(() => ({ data: { classAssigned: "", messages: 0 } }));
+
+      const classAssigned = generalRes.data.classAssigned || "";
+      const messages = generalRes.data.messages || 0;
+
+      // 2. Get pupil + attendance stats from app-server
+      let appData = { pupils: 0, present: 0, absent: 0 };
+      if (classAssigned) {
+        try {
+          const appRes = await appApi.get(
+            `/dashboard/teacher-stats?class=${encodeURIComponent(classAssigned)}`,
+          );
+          appData = appRes.data;
+        } catch {}
+      }
+
+      setStats({
+        pupils: appData.pupils || 0,
+        present: appData.present || 0,
+        absent: appData.absent || 0,
+        messages,
+      });
+    } catch (err) {
+      console.error("Teacher dashboard load error:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, []),
+  );
 
   if (loading) {
     return (
@@ -42,7 +79,19 @@ export default function TeacherDashboard() {
 
   return (
     <LinearGradient colors={gradients.background} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              load();
+            }}
+            tintColor={colors.primary}
+          />
+        }
+      >
         <Text style={styles.welcome}>Welcome,</Text>
         <Text style={styles.name}>{user?.name} 👋</Text>
 

@@ -8,9 +8,11 @@ import { View, ActivityIndicator } from "react-native";
 import UpdateModal from "../components/UpdateModal";
 import { useAppVersion } from "../hooks/useAppVersion";
 import { usePushNotifications } from "../hooks/usePushNotifications";
+import { usePendingSync } from "../hooks/usePendingSync";
 
 function PushSetup({ userId }: { userId?: string }) {
   usePushNotifications(userId);
+  usePendingSync();
   return null;
 }
 

@@ -12,7 +12,14 @@ import { useAuth } from "../hooks/useAuth";
 // Visible tabs PER ROLE — no cross-contamination
 const TABS_BY_ROLE: Record<string, string[]> = {
   teacher: ["dashboard", "pupils", "attendance", "results", "more"],
-  headmaster: ["dashboard", "pupils", "announcements", "results", "messages"],
+  headmaster: [
+    "dashboard",
+    "pupils",
+    "announcements",
+    "results",
+    "messages",
+    "more",
+  ],
   parent: ["dashboard", "children", "announcements", "messages"],
 };
 

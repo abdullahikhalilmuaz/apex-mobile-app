@@ -13,6 +13,14 @@
     },
     "android": {
       "package": "com.abdullahihmuaz.apexglobalacademy",
+      "permissions": [
+        "POST_NOTIFICATIONS",
+        "SCHEDULE_EXACT_ALARM",
+        "USE_EXACT_ALARM",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "WAKE_LOCK"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#0f0c29",
         "foregroundImage": "./assets/images/icon.png",
@@ -36,7 +44,14 @@
       ],
       "expo-status-bar",
       "expo-sharing",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#667eea",
+          "sounds": []
+        }
+      ],
       "expo-image",
       "expo-web-browser"
     ],

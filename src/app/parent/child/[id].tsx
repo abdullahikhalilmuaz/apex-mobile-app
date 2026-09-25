@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -6,15 +6,17 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Picker } from "@react-native-picker/picker";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
+import { ArrowLeft, Printer } from "lucide-react-native";
 import Toast from "react-native-toast-message";
 import { colors, gradients, spacing, radius } from "../../../constants/colors";
 import GlassCard from "../../../components/GlassCard";
 import appApi from "../../../lib/appApi";
+import { generateAndShareResultPDF } from "../../../lib/generateResultPDF";
 
 const TERMS = ["First", "Second", "Third"];
 const SESSIONS = ["2024/2025", "2025/2026", "2026/2027", "2027/2028"];
@@ -33,13 +35,22 @@ export default function ChildDetail() {
   const [term, setTerm] = useState("First");
   const [session, setSession] = useState("2026/2027");
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [printing, setPrinting] = useState(false);
+  const [stats, setStats] = useState({
+    enrollment: 0,
+    highestAvg: 0,
+    lowestAvg: 0,
+  });
 
   const loadStudent = async () => {
     try {
       const res = await appApi.get(`/students/${id}`);
       setStudent(res.data);
+      return res.data;
     } catch {
       Toast.show({ type: "error", text1: "Failed to load student" });
+      return null;
     }
   };
 
@@ -52,13 +63,28 @@ export default function ChildDetail() {
     }
   };
 
-  const loadResult = async () => {
+  const loadStats = async (className?: string) => {
+    if (!className) return;
+    try {
+      const res = await appApi.get(
+        `/results/class/${encodeURIComponent(
+          className,
+        )}/stats?term=${term}&session=${encodeURIComponent(session)}`,
+      );
+      setStats(res.data);
+    } catch {
+      setStats({ enrollment: 0, highestAvg: 0, lowestAvg: 0 });
+    }
+  };
+
+  const loadResult = async (className?: string) => {
     setLoading(true);
     try {
       const res = await appApi.get(
-        `/results/student/${id}?term=${term}&session=${session}`,
+        `/results/student/${id}?term=${term}&session=${encodeURIComponent(session)}`,
       );
       setResult(res.data);
+      await loadStats(className || student?.class);
     } catch {
       setResult(null);
     } finally {
@@ -66,11 +92,12 @@ export default function ChildDetail() {
     }
   };
 
-  const loadAssignments = async () => {
-    if (!student?.class) return;
+  const loadAssignments = async (className?: string) => {
+    const cls = className || student?.class;
+    if (!cls) return;
     try {
       const res = await appApi.get(
-        `/assignments/class/${encodeURIComponent(student.class)}`,
+        `/assignments/class/${encodeURIComponent(cls)}`,
       );
       setAssignments(res.data);
     } catch {
@@ -78,18 +105,76 @@ export default function ChildDetail() {
     }
   };
 
-  useEffect(() => {
-    loadStudent();
-    loadAttendance();
-  }, [id]);
+  useFocusEffect(
+    useCallback(() => {
+      let mounted = true;
+      (async () => {
+        const s = await loadStudent();
+        if (!mounted) return;
+        await loadAttendance();
+        if (tab === "results") await loadResult(s?.class);
+        if (tab === "assignments") await loadAssignments(s?.class);
+      })();
+      return () => {
+        mounted = false;
+      };
+    }, [id]),
+  );
 
-  useEffect(() => {
-    if (tab === "results") loadResult();
-  }, [tab, term, session]);
+  const handleTab = (newTab: Tab) => {
+    setTab(newTab);
+    if (newTab === "results") loadResult();
+    if (newTab === "assignments") loadAssignments();
+  };
 
-  useEffect(() => {
-    if (tab === "assignments" && student?.class) loadAssignments();
-  }, [tab, student]);
+  const handleTermChange = (v: string) => {
+    setTerm(v);
+    if (tab === "results") setTimeout(() => loadResult(), 0);
+  };
+
+  const handleSessionChange = (v: string) => {
+    setSession(v);
+    if (tab === "results") setTimeout(() => loadResult(), 0);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadStudent();
+    await loadAttendance();
+    if (tab === "results") await loadResult();
+    if (tab === "assignments") await loadAssignments();
+    setRefreshing(false);
+  };
+
+  const handlePrint = async () => {
+    if (!result || !student) {
+      Toast.show({ type: "error", text1: "Load the result first" });
+      return;
+    }
+    setPrinting(true);
+    try {
+      await generateAndShareResultPDF({
+        student,
+        result,
+        term,
+        session,
+        stats,
+        attendanceSummary: {
+          present: attendance?.summary?.present || 0,
+          absent: attendance?.summary?.absent || 0,
+          total: attendance?.summary?.total || 0,
+        },
+      });
+    } catch (err: any) {
+      Toast.show({
+        type: "error",
+        text1: "Print failed",
+        text2: err?.message || "Try again",
+      });
+    } finally {
+      setPrinting(false);
+    }
+  };
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "overview", label: "Overview" },
@@ -100,7 +185,17 @@ export default function ChildDetail() {
 
   return (
     <LinearGradient colors={gradients.background} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <ArrowLeft size={20} color={colors.white} />
           <Text style={styles.backText}>Back</Text>
@@ -113,16 +208,18 @@ export default function ChildDetail() {
               {student.middleName ? student.middleName + " " : ""}
               {student.lastName}
             </Text>
-            <Text style={styles.classText}>{student.class}</Text>
+            <Text style={styles.classText}>
+              {student.class}
+              {student.admissionNumber ? ` · ${student.admissionNumber}` : ""}
+            </Text>
           </>
         )}
 
-        {/* Tab bar */}
         <View style={styles.tabBar}>
           {tabs.map((t) => (
             <TouchableOpacity
               key={t.key}
-              onPress={() => setTab(t.key)}
+              onPress={() => handleTab(t.key)}
               style={[styles.tabBtn, tab === t.key && styles.tabBtnActive]}
             >
               <Text
@@ -134,31 +231,27 @@ export default function ChildDetail() {
           ))}
         </View>
 
-        {/* Overview */}
         {tab === "overview" && (
-          <>
-            <GlassCard style={{ marginBottom: spacing.md }}>
-              <Text style={styles.cardTitle}>Attendance Summary</Text>
-              {attendance ? (
-                <>
-                  <Text style={styles.stat}>
-                    Present: {attendance.summary?.present || 0}
-                  </Text>
-                  <Text style={styles.stat}>
-                    Absent: {attendance.summary?.absent || 0}
-                  </Text>
-                  <Text style={styles.stat}>
-                    Late: {attendance.summary?.late || 0}
-                  </Text>
-                </>
-              ) : (
-                <Text style={styles.muted}>No attendance data yet</Text>
-              )}
-            </GlassCard>
-          </>
+          <GlassCard style={{ marginBottom: spacing.md }}>
+            <Text style={styles.cardTitle}>Attendance Summary</Text>
+            {attendance ? (
+              <>
+                <Text style={styles.stat}>
+                  Present: {attendance.summary?.present || 0}
+                </Text>
+                <Text style={styles.stat}>
+                  Absent: {attendance.summary?.absent || 0}
+                </Text>
+                <Text style={styles.stat}>
+                  Late: {attendance.summary?.late || 0}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.muted}>No attendance data yet</Text>
+            )}
+          </GlassCard>
         )}
 
-        {/* Attendance */}
         {tab === "attendance" && (
           <>
             {attendance?.records?.length ? (
@@ -189,7 +282,6 @@ export default function ChildDetail() {
           </>
         )}
 
-        {/* Results */}
         {tab === "results" && (
           <>
             <GlassCard style={{ marginBottom: spacing.md }}>
@@ -197,7 +289,7 @@ export default function ChildDetail() {
               <View style={styles.pickerWrap}>
                 <Picker
                   selectedValue={term}
-                  onValueChange={(v) => setTerm(v)}
+                  onValueChange={handleTermChange}
                   dropdownIconColor={colors.white}
                   style={{ color: colors.white }}
                 >
@@ -211,7 +303,7 @@ export default function ChildDetail() {
               <View style={styles.pickerWrap}>
                 <Picker
                   selectedValue={session}
-                  onValueChange={(v) => setSession(v)}
+                  onValueChange={handleSessionChange}
                   dropdownIconColor={colors.white}
                   style={{ color: colors.white }}
                 >
@@ -242,6 +334,17 @@ export default function ChildDetail() {
                   </View>
                 </GlassCard>
 
+                <TouchableOpacity
+                  style={styles.printBtn}
+                  onPress={handlePrint}
+                  disabled={printing}
+                >
+                  <Printer size={18} color={colors.white} />
+                  <Text style={styles.printBtnText}>
+                    {printing ? "Generating..." : "Print / Save as PDF"}
+                  </Text>
+                </TouchableOpacity>
+
                 {result.subjects?.map((sub: any) => (
                   <GlassCard
                     key={sub.subject}
@@ -251,7 +354,8 @@ export default function ChildDetail() {
                       <View style={{ flex: 1 }}>
                         <Text style={styles.subjectName}>{sub.subject}</Text>
                         <Text style={styles.subjectMeta}>
-                          CA: {sub.ca} • Exam: {sub.exam}
+                          CA1: {sub.ca1 ?? sub.ca ?? 0} • CA2: {sub.ca2 || 0} •
+                          CA3: {sub.ca3 || 0} • Exam: {sub.exam}
                         </Text>
                       </View>
                       <View style={{ alignItems: "flex-end" }}>
@@ -266,7 +370,6 @@ export default function ChildDetail() {
           </>
         )}
 
-        {/* Assignments */}
         {tab === "assignments" && (
           <>
             {assignments.length === 0 ? (
@@ -361,6 +464,21 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   resultHeader: { flexDirection: "row", justifyContent: "space-between" },
+  printBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
+  },
+  printBtnText: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: "700",
+  },
   subjectRow: { flexDirection: "row", alignItems: "center" },
   subjectName: { color: colors.white, fontSize: 14, fontWeight: "600" },
   subjectMeta: { color: colors.textMuted, fontSize: 11, marginTop: 2 },

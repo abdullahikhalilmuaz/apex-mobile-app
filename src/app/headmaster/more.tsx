@@ -10,63 +10,18 @@ import { useRouter } from "expo-router";
 import { colors, gradients, spacing, radius } from "../../constants/colors";
 import { useAuth } from "../../hooks/useAuth";
 import GlassCard from "../../components/GlassCard";
-import {
-  BookOpen,
-  FileText,
-  Bell,
-  MessageCircle,
-  LogOut,
-  ChevronRight,
-  AlarmClock,
-  ClipboardList,
-} from "lucide-react-native";
+import { LogOut, ChevronRight, ClipboardList } from "lucide-react-native";
 
-export default function TeacherMore() {
+export default function HeadmasterMore() {
   const router = useRouter();
   const { logout } = useAuth();
 
   const menuItems = [
     {
       icon: ClipboardList,
-      label: "Assignments",
-      subtitle: "Post homework to class",
-      route: "/teacher/assignments",
-    },
-    {
-      icon: FileText,
       label: "Exam Questions",
-      subtitle: "Set and submit exam papers",
-      route: "/teacher/exams",
-    },
-    {
-      icon: BookOpen,
-      label: "Scheme of Work",
-      subtitle: "View curriculum progress",
-      route: "/teacher/scheme",
-    },
-    {
-      icon: FileText,
-      label: "Lesson Notes",
-      subtitle: "Create and manage notes",
-      route: "/teacher/lessons",
-    },
-    {
-      icon: Bell,
-      label: "Announcements",
-      subtitle: "School updates",
-      route: "/teacher/announcements",
-    },
-    {
-      icon: MessageCircle,
-      label: "Messages",
-      subtitle: "Chat with headmaster",
-      route: "/teacher/message",
-    },
-    {
-      icon: AlarmClock,
-      label: "Class Alarms",
-      subtitle: "Schedule class reminders",
-      route: "/teacher/alarms",
+      subtitle: "View exam papers by class",
+      route: "/headmaster/exams",
     },
   ];
 

@@ -1,18 +1,21 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect } from "expo-router";
+import { Users, UserCheck, BookOpen, Bell } from "lucide-react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { colors, gradients, spacing } from "../../constants/colors";
-import { Users, UserCheck, BookOpen, Bell } from "lucide-react-native";
 import StatCard from "../../components/StatCard";
 import GlassCard from "../../components/GlassCard";
 import api from "../../lib/api";
+import appApi from "../../lib/appApi";
 
 export default function HeadmasterDashboard() {
   const { user } = useAuth();
@@ -23,25 +26,71 @@ export default function HeadmasterDashboard() {
     announcements: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    api
-      .get("/dashboard/stats")
-      .then((res) => setStats(res.data))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+  const load = async () => {
+    try {
+      // Fetch from app-server (pupils + attendance)
+      const appStatsPromise = appApi
+        .get("/dashboard/stats")
+        .catch(() => ({ data: { totalPupils: 0, presentToday: 0 } }));
 
-  if (loading)
+      // Fetch from general backend (teachers + announcements)
+      const generalStatsPromise = api
+        .get("/dashboard/stats")
+        .catch(() => ({ data: { totalTeachers: 0, announcements: 0 } }));
+
+      const [appRes, genRes] = await Promise.all([
+        appStatsPromise,
+        generalStatsPromise,
+      ]);
+
+      setStats({
+        totalPupils: appRes.data.totalPupils || 0,
+        totalTeachers: genRes.data.totalTeachers || 0,
+        presentToday: appRes.data.presentToday || 0,
+        announcements: genRes.data.announcements || 0,
+      });
+    } catch (err) {
+      console.error("Dashboard load error:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, []),
+  );
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load();
+  };
+
+  if (loading) {
     return (
       <LinearGradient colors={gradients.background} style={styles.container}>
-        <ActivityIndicator color={colors.primary} />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 64 }} />
       </LinearGradient>
     );
+  }
 
   return (
     <LinearGradient colors={gradients.background} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         <Text style={styles.welcome}>Welcome back,</Text>
         <Text style={styles.name}>{user?.name} 👋</Text>
 

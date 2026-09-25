@@ -5,6 +5,7 @@ import {
   Bell,
   BookOpen,
   MessageCircle,
+  MoreHorizontal,
 } from "lucide-react-native";
 import { colors } from "../../constants/colors";
 import FloatingTabBar from "../../components/FloatingTabBar";
@@ -59,6 +60,18 @@ export default function HeadmasterLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: "More",
+          tabBarIcon: ({ color, size }) => (
+            <MoreHorizontal size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen name="exams" options={{ href: null }} />
+      <Tabs.Screen name="exam-view" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -11,8 +11,9 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { LinearGradient } from "expo-linear-gradient";
-import { Bell, Plus, Trash2, X } from "lucide-react-native";
+import { Bell, Plus, Trash2, X, TestTube, Bug } from "lucide-react-native";
 import Toast from "react-native-toast-message";
+import { useRouter } from "expo-router";
 import { colors, gradients, spacing, radius } from "../../constants/colors";
 import GlassCard from "../../components/GlassCard";
 import {
@@ -21,10 +22,13 @@ import {
   deleteAlarm,
   getAlarms,
   toggleAlarm,
+  ensureNotificationPermission,
+  fireTestNotification,
   DAY_LABELS,
 } from "../../lib/alarms";
 
 export default function TeacherAlarms() {
+  const router = useRouter();
   const [alarms, setAlarms] = useState<ClassAlarm[]>([]);
   const [showModal, setShowModal] = useState(false);
 
@@ -35,15 +39,55 @@ export default function TeacherAlarms() {
   const [ampm, setAmpm] = useState<"AM" | "PM">("PM");
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
 
+  const [permissionGranted, setPermissionGranted] = useState<boolean | null>(
+    null,
+  );
+  const [permissionReason, setPermissionReason] = useState<string>("");
+  const [testing, setTesting] = useState(false);
+
   const load = async () => {
     const list = await getAlarms();
-    console.log("Loaded alarms from storage:", list);
     setAlarms(list);
+  };
+
+  const checkPermission = async () => {
+    const result = await ensureNotificationPermission();
+    setPermissionGranted(result.granted);
+    setPermissionReason(result.reason || "");
   };
 
   useEffect(() => {
     load();
+    checkPermission();
   }, []);
+
+  const handleTest = async () => {
+    setTesting(true);
+    try {
+      const result = await fireTestNotification();
+      if (result.ok) {
+        Toast.show({
+          type: "success",
+          text1: "Test sent",
+          text2: "You'll get a notification in 10 seconds",
+        });
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Test failed",
+          text2: result.reason || "Try again",
+        });
+      }
+    } catch (err: any) {
+      Toast.show({
+        type: "error",
+        text1: "Test failed",
+        text2: err?.message || "Try again",
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const toggleDay = (d: number) => {
     setDays((prev) =>
@@ -61,26 +105,8 @@ export default function TeacherAlarms() {
       Toast.show({ type: "error", text1: "Pick at least one day" });
       return;
     }
-
     const hour24 = get24Hour();
-    console.log("Creating alarm with:", {
-      title,
-      body,
-      hour12,
-      minute,
-      ampm,
-      hour24,
-      days,
-    });
-
-    await createAlarm({
-      title,
-      body,
-      hour: hour24,
-      minute,
-      days,
-    });
-
+    await createAlarm({ title, body, hour: hour24, minute, days });
     Toast.show({ type: "success", text1: "Alarm created" });
     setShowModal(false);
     load();
@@ -110,12 +136,23 @@ export default function TeacherAlarms() {
     <LinearGradient colors={gradients.background} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.title}>Class Alarms</Text>
-            <Text style={styles.subtitle}>
-              Reminders that fire even when app is closed
-            </Text>
+            <Text style={styles.subtitle}>Fire even when app is closed</Text>
           </View>
+          <TouchableOpacity
+            style={styles.testBtn}
+            onPress={handleTest}
+            disabled={testing}
+          >
+            <TestTube size={18} color={colors.white} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.testBtn}
+            onPress={() => router.push("/teacher/alarm-diagnostics" as any)}
+          >
+            <Bug size={18} color={colors.white} />
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.addBtn}
             onPress={() => setShowModal(true)}
@@ -123,6 +160,44 @@ export default function TeacherAlarms() {
             <Plus size={20} color={colors.white} />
           </TouchableOpacity>
         </View>
+
+        {permissionGranted === false && (
+          <GlassCard
+            style={{ marginBottom: spacing.md, borderColor: colors.error }}
+          >
+            <Text
+              style={{ color: colors.error, fontSize: 13, fontWeight: "600" }}
+            >
+              ⚠️ Notifications blocked
+            </Text>
+            <Text
+              style={{ color: colors.textMuted, fontSize: 12, marginTop: 4 }}
+            >
+              Reason: {permissionReason || "unknown"}
+            </Text>
+            <Text
+              style={{ color: colors.textMuted, fontSize: 12, marginTop: 4 }}
+            >
+              Alarms will not fire. If in Expo Go, install the dev build.
+            </Text>
+            <TouchableOpacity
+              style={{
+                marginTop: 8,
+                paddingVertical: 8,
+                alignItems: "center",
+                backgroundColor: colors.primary,
+                borderRadius: radius.md,
+              }}
+              onPress={checkPermission}
+            >
+              <Text
+                style={{ color: colors.white, fontSize: 13, fontWeight: "600" }}
+              >
+                Retry Permission
+              </Text>
+            </TouchableOpacity>
+          </GlassCard>
+        )}
 
         {alarms.length === 0 ? (
           <GlassCard>
@@ -307,6 +382,15 @@ const styles = StyleSheet.create({
   },
   title: { color: colors.white, fontSize: 26, fontWeight: "700" },
   subtitle: { color: colors.textMuted, fontSize: 12, marginTop: 4 },
+  testBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
   addBtn: {
     width: 44,
     height: 44,

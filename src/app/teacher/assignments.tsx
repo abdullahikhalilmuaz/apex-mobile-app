@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Picker } from "@react-native-picker/picker";
-import { Plus, Users, X, Search, Trash2 } from "lucide-react-native";
+import { Plus, BookOpen, X, Trash2 } from "lucide-react-native";
 import Toast from "react-native-toast-message";
 import { colors, gradients, spacing, radius } from "../../constants/colors";
 import GlassCard from "../../components/GlassCard";
@@ -27,96 +27,109 @@ const CLASSES = [
   "Primary 6",
 ];
 
-type Student = {
+const SUBJECTS = [
+  "", // empty = no subject → applies to all subjects of the class
+  "English Studies",
+  "Mathematics",
+  "Basic Science",
+  "Basic Technology",
+  "Computer Studies",
+  "Physical and Health Education",
+  "Social Studies",
+  "Civic Education",
+  "Security Education",
+  "Islamic Religion Studies",
+  "Christian Religion Studies",
+  "Agricultural Science",
+  "Home Economics",
+  "Yoruba",
+  "Hausa",
+  "Igbo",
+  "French",
+  "Arabic",
+  "Cultural and Creative Arts",
+  "History",
+];
+
+type Assignment = {
   _id: string;
-  firstName: string;
-  middleName?: string;
-  lastName: string;
+  title: string;
+  description: string;
   class: string;
-  gender?: string;
+  subject: string;
+  topic: string;
+  dueDate?: string;
+  createdAt: string;
 };
 
-export default function TeacherStudents() {
+export default function TeacherAssignments() {
   const [className, setClassName] = useState("Primary 5");
-  const [students, setStudents] = useState<Student[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
 
   const [form, setForm] = useState({
-    firstName: "",
-    middleName: "",
-    lastName: "",
-    gender: "male",
-    guardianName: "",
-    guardianPhone: "",
+    title: "",
+    description: "",
+    subject: "",
+    topic: "",
   });
 
-  const loadStudents = async () => {
+  const load = async () => {
     setLoading(true);
     try {
       const res = await appApi.get(
-        `/students/class/${encodeURIComponent(className)}`,
+        `/assignments/class/${encodeURIComponent(className)}`,
       );
-      setStudents(res.data);
-    } catch (err: any) {
-      Toast.show({ type: "error", text1: "Failed to load students" });
+      setAssignments(res.data);
+    } catch {
+      Toast.show({ type: "error", text1: "Failed to load assignments" });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadStudents();
+    load();
   }, [className]);
 
-  const handleAdd = async () => {
-    if (!form.firstName.trim() || !form.lastName.trim()) {
-      Toast.show({ type: "error", text1: "First and last name required" });
+  const handleCreate = async () => {
+    if (!form.title.trim()) {
+      Toast.show({ type: "error", text1: "Title required" });
       return;
     }
     try {
-      await appApi.post("/students", { ...form, class: className });
-      Toast.show({ type: "success", text1: "Student added" });
+      await appApi.post("/assignments", { ...form, class: className });
+      Toast.show({ type: "success", text1: "Assignment posted" });
       setShowAdd(false);
-      setForm({
-        firstName: "",
-        middleName: "",
-        lastName: "",
-        gender: "male",
-        guardianName: "",
-        guardianPhone: "",
-      });
-      loadStudents();
+      setForm({ title: "", description: "", subject: "", topic: "" });
+      load();
     } catch (err: any) {
       Toast.show({
         type: "error",
-        text1: "Add failed",
+        text1: "Failed",
         text2: err?.response?.data?.error || "Try again",
       });
     }
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert(
-      "Delete student?",
-      "This will hide the student from the class.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await appApi.delete(`/students/${id}`);
-              Toast.show({ type: "success", text1: "Student removed" });
-              loadStudents();
-            } catch {
-              Toast.show({ type: "error", text1: "Delete failed" });
-            }
-          },
+    Alert.alert("Delete assignment?", "Parents will no longer see this.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await appApi.delete(`/assignments/${id}`);
+            Toast.show({ type: "success", text1: "Deleted" });
+            load();
+          } catch {
+            Toast.show({ type: "error", text1: "Failed" });
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   return (
@@ -124,8 +137,8 @@ export default function TeacherStudents() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>Students</Text>
-            <Text style={styles.subtitle}>Manage your class roster</Text>
+            <Text style={styles.title}>Assignments</Text>
+            <Text style={styles.subtitle}>Post homework for your class</Text>
           </View>
           <TouchableOpacity
             style={styles.addBtn}
@@ -135,7 +148,6 @@ export default function TeacherStudents() {
           </TouchableOpacity>
         </View>
 
-        {/* Class selector */}
         <GlassCard style={{ marginBottom: spacing.md }}>
           <Text style={styles.label}>Class</Text>
           <View style={styles.pickerWrap}>
@@ -152,44 +164,35 @@ export default function TeacherStudents() {
           </View>
         </GlassCard>
 
-        {/* Count */}
-        <Text style={styles.countText}>
-          {students.length} student{students.length === 1 ? "" : "s"} in{" "}
-          {className}
-        </Text>
-
         {loading ? (
           <ActivityIndicator color={colors.primary} style={{ marginTop: 32 }} />
-        ) : students.length === 0 ? (
+        ) : assignments.length === 0 ? (
           <GlassCard>
-            <Text style={styles.empty}>No students yet. Tap + to add one.</Text>
+            <Text style={styles.empty}>No assignments yet.</Text>
           </GlassCard>
         ) : (
-          students.map((s) => (
-            <GlassCard key={s._id} style={{ marginBottom: spacing.sm }}>
-              <View style={styles.row}>
-                <View style={styles.avatar}>
-                  <Users size={20} color={colors.white} />
-                </View>
+          assignments.map((a) => (
+            <GlassCard key={a._id} style={{ marginBottom: spacing.sm }}>
+              <View style={styles.cardHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.studentName}>
-                    {s.firstName} {s.middleName ? s.middleName + " " : ""}
-                    {s.lastName}
-                  </Text>
-                  <Text style={styles.studentMeta}>
-                    {s.gender || "—"} • {s.class}
+                  <Text style={styles.assignmentTitle}>{a.title}</Text>
+                  <Text style={styles.assignmentMeta}>
+                    {a.subject ? a.subject : "All subjects"}
+                    {a.topic ? ` • Topic: ${a.topic}` : ""}
                   </Text>
                 </View>
-                <TouchableOpacity onPress={() => handleDelete(s._id)}>
+                <TouchableOpacity onPress={() => handleDelete(a._id)}>
                   <Trash2 size={18} color={colors.error} />
                 </TouchableOpacity>
               </View>
+              {a.description ? (
+                <Text style={styles.assignmentDesc}>{a.description}</Text>
+              ) : null}
             </GlassCard>
           ))
         )}
       </ScrollView>
 
-      {/* Add modal */}
       <Modal
         visible={showAdd}
         transparent
@@ -199,72 +202,63 @@ export default function TeacherStudents() {
         <View style={styles.overlay}>
           <View style={styles.modal}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Student</Text>
+              <Text style={styles.modalTitle}>New Assignment</Text>
               <TouchableOpacity onPress={() => setShowAdd(false)}>
                 <X size={24} color={colors.white} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.label}>First name *</Text>
+            <Text style={styles.label}>Title *</Text>
             <TextInput
               style={styles.input}
-              value={form.firstName}
-              onChangeText={(t) => setForm({ ...form, firstName: t })}
+              value={form.title}
+              onChangeText={(t) => setForm({ ...form, title: t })}
               placeholderTextColor={colors.textDim}
-              placeholder="e.g. Ahmed"
+              placeholder="e.g. Read Chapter 3"
             />
 
-            <Text style={styles.label}>Middle name (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={form.middleName}
-              onChangeText={(t) => setForm({ ...form, middleName: t })}
-              placeholderTextColor={colors.textDim}
-              placeholder="e.g. Musa"
-            />
-
-            <Text style={styles.label}>Last name *</Text>
-            <TextInput
-              style={styles.input}
-              value={form.lastName}
-              onChangeText={(t) => setForm({ ...form, lastName: t })}
-              placeholderTextColor={colors.textDim}
-              placeholder="e.g. Ibrahim"
-            />
-
-            <Text style={styles.label}>Gender</Text>
+            <Text style={styles.label}>Subject</Text>
             <View style={styles.pickerWrap}>
               <Picker
-                selectedValue={form.gender}
-                onValueChange={(v) => setForm({ ...form, gender: v })}
+                selectedValue={form.subject}
+                onValueChange={(v) => setForm({ ...form, subject: v })}
                 dropdownIconColor={colors.white}
                 style={{ color: colors.white }}
               >
-                <Picker.Item label="Male" value="male" />
-                <Picker.Item label="Female" value="female" />
+                {SUBJECTS.map((s) => (
+                  <Picker.Item
+                    key={s || "none"}
+                    label={s ? s : "— All subjects —"}
+                    value={s}
+                  />
+                ))}
               </Picker>
             </View>
 
-            <Text style={styles.label}>Guardian name (optional)</Text>
+            <Text style={styles.label}>
+              Topic (helps parent find it in the book)
+            </Text>
             <TextInput
               style={styles.input}
-              value={form.guardianName}
-              onChangeText={(t) => setForm({ ...form, guardianName: t })}
+              value={form.topic}
+              onChangeText={(t) => setForm({ ...form, topic: t })}
               placeholderTextColor={colors.textDim}
+              placeholder="e.g. Chapter 3, Page 42"
             />
 
-            <Text style={styles.label}>Guardian phone (optional)</Text>
+            <Text style={styles.label}>Description / Instructions</Text>
             <TextInput
-              style={styles.input}
-              keyboardType="phone-pad"
-              value={form.guardianPhone}
-              onChangeText={(t) => setForm({ ...form, guardianPhone: t })}
+              style={[styles.input, { minHeight: 80 }]}
+              multiline
+              value={form.description}
+              onChangeText={(t) => setForm({ ...form, description: t })}
               placeholderTextColor={colors.textDim}
+              placeholder="What should the student do?"
             />
 
-            <TouchableOpacity style={styles.saveBtn} onPress={handleAdd}>
-              <Plus size={20} color={colors.white} />
-              <Text style={styles.saveBtnText}>Add Student</Text>
+            <TouchableOpacity style={styles.saveBtn} onPress={handleCreate}>
+              <BookOpen size={20} color={colors.white} />
+              <Text style={styles.saveBtnText}>Post Assignment</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -303,23 +297,21 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     overflow: "hidden",
   },
-  countText: {
+  empty: { color: colors.textMuted, textAlign: "center" },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  assignmentTitle: { color: colors.white, fontSize: 16, fontWeight: "700" },
+  assignmentMeta: { color: colors.primary, fontSize: 12, marginTop: 4 },
+  assignmentDesc: {
     color: colors.textMuted,
     fontSize: 13,
-    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
+    lineHeight: 19,
   },
-  empty: { color: colors.textMuted, textAlign: "center" },
-  row: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.full,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  studentName: { color: colors.white, fontSize: 15, fontWeight: "600" },
-  studentMeta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.7)",
@@ -330,7 +322,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: spacing.lg,
-    maxHeight: "90%",
+    maxHeight: "92%",
   },
   modalHeader: {
     flexDirection: "row",
