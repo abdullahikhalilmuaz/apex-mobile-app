@@ -1,38 +1,31 @@
+import { Picker } from "@react-native-picker/picker";
+import { LinearGradient } from "expo-linear-gradient";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { ArrowLeft, Plus, Save, Send, Trash2 } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
   ActivityIndicator,
   Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Picker } from "@react-native-picker/picker";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Plus, Trash2, Send, Save } from "lucide-react-native";
 import Toast from "react-native-toast-message";
-import { colors, gradients, spacing, radius } from "../../constants/colors";
 import GlassCard from "../../components/GlassCard";
+import { colors, gradients, radius, spacing } from "../../constants/colors";
+import { useTeacherClass } from "../../hooks/useTeacherClass";
 import appApi from "../../lib/appApi";
 import {
-  ExamData,
-  saveDraft,
-  loadDraft,
-  clearDraft,
   addPending,
+  clearDraft,
+  ExamData,
+  loadDraft,
+  saveDraft,
 } from "../../lib/examDraft";
 
-const CLASSES = [
-  "Primary 1",
-  "Primary 2",
-  "Primary 3",
-  "Primary 4",
-  "Primary 5",
-  "Primary 6",
-];
 const SUBJECTS = [
   "English Studies",
   "Mathematics",
@@ -63,10 +56,15 @@ type Section = "objectives" | "essays" | "fillBlanks";
 export default function ExamEditor() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
+  const {
+    className,
+    loading: classLoading,
+    error: classError,
+  } = useTeacherClass();
 
   const [data, setData] = useState<ExamData>({
     title: "",
-    class: "Primary 5",
+    class: "",
     subject: "Mathematics",
     term: "First",
     session: "2026/2027",
@@ -84,6 +82,13 @@ export default function ExamEditor() {
   const [expanded, setExpanded] = useState<Section>("objectives");
 
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Lock class from teacher's assignment
+  useEffect(() => {
+    if (className && !id) {
+      setData((prev) => ({ ...prev, class: className }));
+    }
+  }, [className, id]);
 
   // Load existing exam
   const load = async () => {
@@ -121,8 +126,9 @@ export default function ExamEditor() {
   useEffect(() => {
     (async () => {
       if (id) return;
+      if (!className) return;
       const draft = await loadDraft(
-        data.class,
+        className,
         data.subject,
         data.term,
         data.session,
@@ -132,10 +138,11 @@ export default function ExamEditor() {
         Toast.show({ type: "info", text1: "Draft restored" });
       }
     })();
-  }, [data.class, data.subject, data.term, data.session]);
+  }, [className, data.subject, data.term, data.session]);
 
   // Auto-save draft (debounced)
   useEffect(() => {
+    if (!data.class) return;
     if (draftTimer.current) clearTimeout(draftTimer.current);
     draftTimer.current = setTimeout(() => {
       saveDraft(data);
@@ -224,7 +231,7 @@ export default function ExamEditor() {
     if (!data.subject || !data.class || !data.term || !data.session) {
       Toast.show({
         type: "error",
-        text1: "Fill class, subject, term, session",
+        text1: "Fill subject, term, session",
       });
       return;
     }
@@ -301,10 +308,24 @@ export default function ExamEditor() {
     </TouchableOpacity>
   );
 
-  if (loading) {
+  if (classLoading || loading) {
     return (
       <LinearGradient colors={gradients.background} style={styles.container}>
         <ActivityIndicator color={colors.primary} style={{ marginTop: 64 }} />
+      </LinearGradient>
+    );
+  }
+
+  if (!className && !id) {
+    return (
+      <LinearGradient colors={gradients.background} style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <GlassCard>
+            <Text style={styles.empty}>
+              {classError || "No class assigned to your account"}
+            </Text>
+          </GlassCard>
+        </ScrollView>
       </LinearGradient>
     );
   }
@@ -331,21 +352,9 @@ export default function ExamEditor() {
           )}
         </View>
 
-        {/* Exam header fields */}
         <GlassCard style={{ marginBottom: spacing.md }}>
-          <Text style={styles.label}>Class</Text>
-          <View style={styles.pickerWrap}>
-            <Picker
-              selectedValue={data.class}
-              onValueChange={(v) => update({ class: v })}
-              style={{ color: colors.white }}
-              dropdownIconColor={colors.white}
-            >
-              {CLASSES.map((c) => (
-                <Picker.Item key={c} label={c} value={c} />
-              ))}
-            </Picker>
-          </View>
+          <Text style={styles.label}>Your Class</Text>
+          <Text style={styles.classValue}>{data.class}</Text>
 
           <Text style={styles.label}>Subject</Text>
           <View style={styles.pickerWrap}>
@@ -421,7 +430,6 @@ export default function ExamEditor() {
           />
         </GlassCard>
 
-        {/* OBJECTIVES */}
         {sectionHeader(
           "objectives",
           "SECTION A · OBJECTIVE",
@@ -482,7 +490,6 @@ export default function ExamEditor() {
           </View>
         )}
 
-        {/* ESSAYS */}
         {sectionHeader("essays", "SECTION B · ESSAY", data.essays.length)}
         {expanded === "essays" && (
           <View style={{ marginBottom: spacing.md }}>
@@ -522,7 +529,6 @@ export default function ExamEditor() {
           </View>
         )}
 
-        {/* FILL BLANKS */}
         {sectionHeader(
           "fillBlanks",
           "SECTION C · FILL IN THE BLANK",
@@ -563,7 +569,6 @@ export default function ExamEditor() {
           </View>
         )}
 
-        {/* Actions */}
         <View style={{ flexDirection: "row", gap: 10 }}>
           <TouchableOpacity
             style={[
@@ -609,6 +614,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 4,
     marginTop: 6,
+  },
+  classValue: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 2,
+    marginBottom: spacing.sm,
   },
   pickerWrap: {
     backgroundColor: "rgba(255,255,255,0.06)",
@@ -699,4 +711,5 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   actionBtnText: { color: colors.white, fontSize: 14, fontWeight: "700" },
+  empty: { color: colors.textMuted, textAlign: "center" },
 });

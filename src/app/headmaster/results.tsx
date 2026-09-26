@@ -1,28 +1,21 @@
+import { Picker } from "@react-native-picker/picker";
+import { LinearGradient } from "expo-linear-gradient";
+import { ChevronDown, TrendingUp, Trophy, Users } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Picker } from "@react-native-picker/picker";
-import { ChevronDown, Trophy, Users, TrendingUp } from "lucide-react-native";
-import { colors, gradients, spacing, radius } from "../../constants/colors";
 import GlassCard from "../../components/GlassCard";
+import { CLASSES } from "../../constants/classes";
+import { colors, gradients, radius, spacing } from "../../constants/colors";
 import appApi from "../../lib/appApi";
 
-const CLASSES = [
-  "Primary 1",
-  "Primary 2",
-  "Primary 3",
-  "Primary 4",
-  "Primary 5",
-  "Primary 6",
-];
 const TERMS = ["First", "Second", "Third"];
 const SESSIONS = ["2024/2025", "2025/2026", "2026/2027", "2027/2028"];
 

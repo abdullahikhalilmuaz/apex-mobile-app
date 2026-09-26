@@ -1,27 +1,18 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
   ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Picker } from "@react-native-picker/picker";
 import Toast from "react-native-toast-message";
-import { colors, gradients, spacing, radius } from "../../constants/colors";
 import GlassCard from "../../components/GlassCard";
+import { colors, gradients, radius, spacing } from "../../constants/colors";
+import { useTeacherClass } from "../../hooks/useTeacherClass";
 import appApi from "../../lib/appApi";
-
-const CLASSES = [
-  "Primary 1",
-  "Primary 2",
-  "Primary 3",
-  "Primary 4",
-  "Primary 5",
-  "Primary 6",
-];
 
 type Student = {
   _id: string;
@@ -33,7 +24,11 @@ type Student = {
 type Status = "present" | "absent" | "late" | "excused";
 
 export default function TeacherAttendance() {
-  const [className, setClassName] = useState("Primary 5");
+  const {
+    className,
+    loading: classLoading,
+    error: classError,
+  } = useTeacherClass();
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [students, setStudents] = useState<Student[]>([]);
   const [marks, setMarks] = useState<Record<string, Status>>({});
@@ -41,6 +36,7 @@ export default function TeacherAttendance() {
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
+    if (!className) return;
     setLoading(true);
     try {
       const [studentsRes, attRes] = await Promise.all([
@@ -72,6 +68,7 @@ export default function TeacherAttendance() {
   };
 
   const handleSave = async () => {
+    if (!className) return;
     setSaving(true);
     try {
       const records = students.map((s) => ({
@@ -99,6 +96,28 @@ export default function TeacherAttendance() {
     excused: colors.info,
   };
 
+  if (classLoading) {
+    return (
+      <LinearGradient colors={gradients.background} style={styles.container}>
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 64 }} />
+      </LinearGradient>
+    );
+  }
+
+  if (!className) {
+    return (
+      <LinearGradient colors={gradients.background} style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <GlassCard>
+            <Text style={styles.empty}>
+              {classError || "No class assigned to your account"}
+            </Text>
+          </GlassCard>
+        </ScrollView>
+      </LinearGradient>
+    );
+  }
+
   return (
     <LinearGradient colors={gradients.background} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -106,19 +125,8 @@ export default function TeacherAttendance() {
         <Text style={styles.subtitle}>Mark today's class</Text>
 
         <GlassCard style={{ marginBottom: spacing.md }}>
-          <Text style={styles.label}>Class</Text>
-          <View style={styles.pickerWrap}>
-            <Picker
-              selectedValue={className}
-              onValueChange={(v) => setClassName(v)}
-              dropdownIconColor={colors.white}
-              style={{ color: colors.white }}
-            >
-              {CLASSES.map((c) => (
-                <Picker.Item key={c} label={c} value={c} />
-              ))}
-            </Picker>
-          </View>
+          <Text style={styles.label}>Your Class</Text>
+          <Text style={styles.classValue}>{className}</Text>
 
           <Text style={styles.label}>Date</Text>
           <View style={styles.dateRow}>
@@ -224,10 +232,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     marginTop: spacing.sm,
   },
-  pickerWrap: {
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderRadius: radius.md,
-    overflow: "hidden",
+  classValue: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 2,
+    marginBottom: spacing.sm,
   },
   dateRow: {
     flexDirection: "row",

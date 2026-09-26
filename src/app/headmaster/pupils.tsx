@@ -1,17 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-  RefreshControl,
-  TextInput,
-} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Search, Users } from "lucide-react-native";
-import { colors, gradients, spacing, radius } from "../../constants/colors";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import GlassCard from "../../components/GlassCard";
+import { colors, gradients, radius, spacing } from "../../constants/colors";
 import appApi from "../../lib/appApi";
 
 type Student = {

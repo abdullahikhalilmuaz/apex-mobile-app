@@ -1,35 +1,27 @@
+import { Picker } from "@react-native-picker/picker";
+import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
   ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Picker } from "@react-native-picker/picker";
 import Toast from "react-native-toast-message";
-import { colors, gradients, spacing, radius } from "../../constants/colors";
 import GlassCard from "../../components/GlassCard";
+import { colors, gradients, radius, spacing } from "../../constants/colors";
+import { useTeacherClass } from "../../hooks/useTeacherClass";
 import appApi from "../../lib/appApi";
 import {
-  saveDraft,
-  loadDraft,
-  clearDraft,
   addPending,
+  clearDraft,
   DraftScores,
+  loadDraft,
+  saveDraft,
 } from "../../lib/resultsDraft";
-
-const CLASSES = [
-  "Primary 1",
-  "Primary 2",
-  "Primary 3",
-  "Primary 4",
-  "Primary 5",
-  "Primary 6",
-];
 
 const SUBJECTS = [
   "English Studies",
@@ -67,7 +59,11 @@ type Student = {
 type SubScore = { ca1: number; ca2: number; ca3: number; exam: number };
 
 export default function TeacherResults() {
-  const [className, setClassName] = useState("Primary 5");
+  const {
+    className,
+    loading: classLoading,
+    error: classError,
+  } = useTeacherClass();
   const [term, setTerm] = useState("First");
   const [session, setSession] = useState("2026/2027");
   const [students, setStudents] = useState<Student[]>([]);
@@ -83,6 +79,7 @@ export default function TeacherResults() {
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = async () => {
+    if (!className) return;
     setLoading(true);
     setOfflineMode(false);
     try {
@@ -94,7 +91,9 @@ export default function TeacherResults() {
       let existing: any[] = [];
       try {
         const resRes = await appApi.get(
-          `/results/class/${encodeURIComponent(className)}?term=${term}&session=${encodeURIComponent(session)}`,
+          `/results/class/${encodeURIComponent(className)}?term=${term}&session=${encodeURIComponent(
+            session,
+          )}`,
         );
         existing = resRes.data;
         setHasExisting(existing.length > 0);
@@ -146,6 +145,7 @@ export default function TeacherResults() {
 
   useEffect(() => {
     if (loading) return;
+    if (!className) return;
     if (Object.keys(scores).length === 0) return;
     if (draftTimer.current) clearTimeout(draftTimer.current);
     draftTimer.current = setTimeout(() => {
@@ -203,7 +203,7 @@ export default function TeacherResults() {
   };
 
   const handleSave = async () => {
-    if (students.length === 0) return;
+    if (students.length === 0 || !className) return;
     setSaving(true);
     const payload = buildPayload();
     try {
@@ -258,6 +258,28 @@ export default function TeacherResults() {
       ? `Update ${term} Term Results`
       : `Publish ${term} Term Results`;
 
+  if (classLoading) {
+    return (
+      <LinearGradient colors={gradients.background} style={styles.container}>
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 64 }} />
+      </LinearGradient>
+    );
+  }
+
+  if (!className) {
+    return (
+      <LinearGradient colors={gradients.background} style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <GlassCard>
+            <Text style={styles.empty}>
+              {classError || "No class assigned to your account"}
+            </Text>
+          </GlassCard>
+        </ScrollView>
+      </LinearGradient>
+    );
+  }
+
   return (
     <LinearGradient colors={gradients.background} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -271,19 +293,8 @@ export default function TeacherResults() {
         </Text>
 
         <GlassCard style={{ marginBottom: spacing.md }}>
-          <Text style={styles.label}>Class</Text>
-          <View style={styles.pickerWrap}>
-            <Picker
-              selectedValue={className}
-              onValueChange={(v) => setClassName(v)}
-              dropdownIconColor={colors.white}
-              style={{ color: colors.white }}
-            >
-              {CLASSES.map((c) => (
-                <Picker.Item key={c} label={c} value={c} />
-              ))}
-            </Picker>
-          </View>
+          <Text style={styles.label}>Your Class</Text>
+          <Text style={styles.classValue}>{className}</Text>
 
           <Text style={styles.label}>Term</Text>
           <View style={styles.pickerWrap}>
@@ -448,6 +459,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 6,
     marginTop: spacing.sm,
+  },
+  classValue: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 2,
+    marginBottom: spacing.sm,
   },
   pickerWrap: {
     backgroundColor: "rgba(255,255,255,0.06)",

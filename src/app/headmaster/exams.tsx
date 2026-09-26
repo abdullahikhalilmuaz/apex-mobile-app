@@ -1,29 +1,21 @@
+import { Picker } from "@react-native-picker/picker";
+import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect, useRouter } from "expo-router";
+import { ChevronRight, FileText } from "lucide-react-native";
 import { useCallback, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Picker } from "@react-native-picker/picker";
-import { useRouter, useFocusEffect } from "expo-router";
-import { FileText, ChevronRight } from "lucide-react-native";
-import { colors, gradients, spacing, radius } from "../../constants/colors";
 import GlassCard from "../../components/GlassCard";
+import { CLASSES } from "../../constants/classes";
+import { colors, gradients, radius, spacing } from "../../constants/colors";
 import appApi from "../../lib/appApi";
-
-const CLASSES = [
-  "Primary 1",
-  "Primary 2",
-  "Primary 3",
-  "Primary 4",
-  "Primary 5",
-  "Primary 6",
-];
 
 type Exam = {
   _id: string;

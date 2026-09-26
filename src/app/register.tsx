@@ -1,21 +1,22 @@
+import { Picker } from "@react-native-picker/picker";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { Lock, Mail, Phone, School, User } from "lucide-react-native";
 import { useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  ScrollView,
+  View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import { Picker } from "@react-native-picker/picker";
-import { colors, gradients, spacing, radius } from "../constants/colors";
 import Toast from "react-native-toast-message";
-import { Mail, Lock, User, Phone, School, Users } from "lucide-react-native";
+import { CLASSES } from "../constants/classes";
+import { colors, gradients, radius, spacing } from "../constants/colors";
 import api from "../lib/api";
 
 export default function RegisterScreen() {
@@ -250,12 +251,9 @@ export default function RegisterScreen() {
                       dropdownIconColor={colors.white}
                     >
                       <Picker.Item label="Select Class" value="" />
-                      <Picker.Item label="Primary 1" value="Primary 1" />
-                      <Picker.Item label="Primary 2" value="Primary 2" />
-                      <Picker.Item label="Primary 3" value="Primary 3" />
-                      <Picker.Item label="Primary 4" value="Primary 4" />
-                      <Picker.Item label="Primary 5" value="Primary 5" />
-                      <Picker.Item label="Primary 6" value="Primary 6" />
+                      {CLASSES.map((c) => (
+                        <Picker.Item key={c} label={c} value={c} />
+                      ))}
                     </Picker>
                   </View>
 

@@ -1,31 +1,23 @@
+import { Picker } from "@react-native-picker/picker";
+import { LinearGradient } from "expo-linear-gradient";
+import { Plus, Trash2, Users, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-  TextInput,
   ActivityIndicator,
   Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Picker } from "@react-native-picker/picker";
-import { Plus, Users, X, Trash2 } from "lucide-react-native";
 import Toast from "react-native-toast-message";
-import { colors, gradients, spacing, radius } from "../../constants/colors";
 import GlassCard from "../../components/GlassCard";
+import { colors, gradients, radius, spacing } from "../../constants/colors";
+import { useTeacherClass } from "../../hooks/useTeacherClass";
 import appApi from "../../lib/appApi";
-
-const CLASSES = [
-  "Primary 1",
-  "Primary 2",
-  "Primary 3",
-  "Primary 4",
-  "Primary 5",
-  "Primary 6",
-];
 
 type Student = {
   _id: string;
@@ -38,7 +30,11 @@ type Student = {
 };
 
 export default function TeacherPupils() {
-  const [className, setClassName] = useState("Primary 5");
+  const {
+    className,
+    loading: classLoading,
+    error: classError,
+  } = useTeacherClass();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
@@ -54,6 +50,7 @@ export default function TeacherPupils() {
   });
 
   const loadStudents = async () => {
+    if (!className) return;
     setLoading(true);
     try {
       const res = await appApi.get(
@@ -127,6 +124,31 @@ export default function TeacherPupils() {
     );
   });
 
+  if (classLoading) {
+    return (
+      <LinearGradient colors={gradients.background} style={styles.container}>
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 64 }} />
+      </LinearGradient>
+    );
+  }
+
+  if (!className) {
+    return (
+      <LinearGradient colors={gradients.background} style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <GlassCard>
+            <Text style={styles.empty}>
+              {classError || "No class assigned to your account"}
+            </Text>
+            <Text style={[styles.empty, { marginTop: 8, fontSize: 12 }]}>
+              Contact the headmaster to assign you a class.
+            </Text>
+          </GlassCard>
+        </ScrollView>
+      </LinearGradient>
+    );
+  }
+
   return (
     <LinearGradient colors={gradients.background} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -143,21 +165,10 @@ export default function TeacherPupils() {
           </TouchableOpacity>
         </View>
 
-        {/* Class selector */}
+        {/* Class (locked) */}
         <GlassCard style={{ marginBottom: spacing.md }}>
-          <Text style={styles.label}>Class</Text>
-          <View style={styles.pickerWrap}>
-            <Picker
-              selectedValue={className}
-              onValueChange={(v) => setClassName(v)}
-              dropdownIconColor={colors.white}
-              style={{ color: colors.white }}
-            >
-              {CLASSES.map((c) => (
-                <Picker.Item key={c} label={c} value={c} />
-              ))}
-            </Picker>
-          </View>
+          <Text style={styles.label}>Your Class</Text>
+          <Text style={styles.classValue}>{className}</Text>
         </GlassCard>
 
         {/* Search */}
@@ -209,7 +220,6 @@ export default function TeacherPupils() {
         )}
       </ScrollView>
 
-      {/* Add modal */}
       <Modal
         visible={showAdd}
         transparent
@@ -317,6 +327,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 6,
     marginTop: spacing.sm,
+  },
+  classValue: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 2,
   },
   pickerWrap: {
     backgroundColor: "rgba(255,255,255,0.06)",
