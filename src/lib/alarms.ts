@@ -4,6 +4,8 @@ import { canUseNativeNotifications, getNotifEnv } from "./notificationEnv";
 import { logEvent } from "./notificationLogger";
 
 const STORAGE_KEY = "class_alarms";
+const CHANNEL_ID = "class-alarm-v2";
+const SOUND_FILE = "alarm.wav";
 
 export type ClassAlarm = {
   id: string;
@@ -28,7 +30,6 @@ async function saveAlarms(alarms: ClassAlarm[]) {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
 }
 
-// Only import expo-notifications when we know it's safe
 async function getNotifications(): Promise<any> {
   if (!canUseNativeNotifications()) return null;
   try {
@@ -60,12 +61,12 @@ export async function ensureNotificationPermission(): Promise<{
 
   if (Platform.OS === "android") {
     try {
-      await Notifications.setNotificationChannelAsync("class-alarm", {
+      await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
         name: "Class Alarms",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 500, 250, 500],
         lightColor: "#667eea",
-        sound: "default",
+        sound: SOUND_FILE,
         lockscreenVisibility:
           Notifications.AndroidNotificationVisibility.PUBLIC,
         bypassDnd: true,
@@ -82,7 +83,6 @@ export async function ensureNotificationPermission(): Promise<{
   return { granted: status === "granted", reason: status };
 }
 
-// ── Cancel ──
 async function cancelAlarmNotifications(alarm: ClassAlarm) {
   const Notifications = await getNotifications();
   if (!Notifications) return;
@@ -110,26 +110,26 @@ async function scheduleAlarmNotifications(
   const ids: string[] = [];
 
   for (const day of alarm.days) {
-    // Skip invalid days
     if (day < 0 || day > 6) continue;
 
     try {
-      // SDK 53+ — use typed trigger
+      // SDK 53+ requires typed trigger
       const trigger: any = {
         type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
         weekday: day + 1, // Expo: 1=Sun..7=Sat
         hour: alarm.hour,
         minute: alarm.minute,
-        channelId: "class-alarm",
+        channelId: CHANNEL_ID,
       };
 
       const id = await Notifications.scheduleNotificationAsync({
         content: {
           title: alarm.title,
           body: alarm.body || "Class starting soon",
-          sound: "default",
+          sound: SOUND_FILE,
           data: { type: "class-alarm", alarmId: alarm.id },
           priority: Notifications.AndroidNotificationPriority.MAX,
+          ...(Platform.OS === "android" && { channelId: CHANNEL_ID }),
         },
         trigger,
       });
@@ -148,7 +148,6 @@ async function scheduleAlarmNotifications(
   return ids;
 }
 
-// ── Create ──
 export async function createAlarm(
   input: Omit<ClassAlarm, "id" | "notificationIds" | "enabled">,
 ): Promise<ClassAlarm> {
@@ -205,15 +204,16 @@ export async function fireTestNotification(): Promise<{
     await Notifications.scheduleNotificationAsync({
       content: {
         title: "Test Alarm",
-        body: "If you see this, alarms work.",
-        sound: "default",
+        body: "If you hear beep beep beep, alarms work.",
+        sound: SOUND_FILE,
         data: { type: "test" },
         priority: Notifications.AndroidNotificationPriority.MAX,
+        ...(Platform.OS === "android" && { channelId: CHANNEL_ID }),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: 10,
-        channelId: "class-alarm",
+        channelId: CHANNEL_ID,
       },
     });
     await logEvent("schedule", { kind: "test", seconds: 10 });
