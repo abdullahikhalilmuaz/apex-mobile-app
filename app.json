@@ -49,11 +49,21 @@
         {
           "icon": "./assets/images/icon.png",
           "color": "#667eea",
-          "sounds": []
+          "sounds": ["./assets/sounds/alarm.wav"]
         }
       ],
       "expo-image",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "useLegacyPackaging": false
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
