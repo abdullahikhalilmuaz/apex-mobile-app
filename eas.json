@@ -15,13 +15,13 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=arm64-v8a"
+        "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a"
       }
     },
     "production": {
       "android": {
         "buildType": "app-bundle",
-        "gradleCommand": ":app:bundleRelease -PreactNativeArchitectures=arm64-v8a"
+        "gradleCommand": ":app:bundleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a"
       }
     }
   },
