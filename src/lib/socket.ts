@@ -1,13 +1,11 @@
 import { io, Socket } from "socket.io-client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
 
-// On web dev → localhost (same machine, no firewall)
-// On native → LAN IP (phone must reach laptop)
-export const SOCKET_URL =
-  Platform.OS === "web"
-    ? "http://localhost:3000"
-    : "http://192.168.233.148:3000";
+// Single production URL for both web and native.
+// If you need to test against your local server during dev,
+// temporarily change this to "http://192.168.x.x:3000" and remember to
+// switch back before building an APK.
+export const SOCKET_URL = "https://apex-app-backend-server.onrender.com";
 
 let socket: Socket | null = null;
 
