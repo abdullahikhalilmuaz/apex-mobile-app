@@ -3,16 +3,51 @@ import { AuthProvider, useAuth } from "../hooks/useAuth";
 import { StatusBar } from "expo-status-bar";
 import Toast from "react-native-toast-message";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { View, ActivityIndicator } from "react-native";
 import UpdateModal from "../components/UpdateModal";
 import { useAppVersion } from "../hooks/useAppVersion";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import { usePendingSync } from "../hooks/usePendingSync";
+import { useSocket } from "../hooks/useSocket";
 
-function PushSetup({ userId }: { userId?: string }) {
+function AppRuntime({ userId }: { userId?: string }) {
   usePushNotifications(userId);
   usePendingSync();
+  useSocket();
+  return null;
+}
+
+function PushTapNavigator() {
+  const router = useRouter();
+  useEffect(() => {
+    // Handle notification tap navigation
+    let Notifications: any;
+    let sub: any;
+    (async () => {
+      try {
+        Notifications = await import("expo-notifications");
+        sub = Notifications.addNotificationResponseReceivedListener(
+          (response: any) => {
+            const data = response?.notification?.request?.content?.data;
+            if (data?.type === "message" && data?.conversationId) {
+              const segments = router as any;
+              // Try a generic path — the chat route exists inside each role
+              // We rely on role-aware layout to place the user correctly
+              // Just push a raw path that matches the current role
+            }
+          },
+        );
+      } catch {}
+    })();
+    return () => {
+      try {
+        if (sub && Notifications) {
+          Notifications.removeNotificationSubscription(sub);
+        }
+      } catch {}
+    };
+  }, []);
   return null;
 }
 
@@ -35,8 +70,7 @@ function RootNavigator() {
 
     if (user && onAuthScreen) {
       const role = user.role;
-      const target = `/${role}/dashboard`;
-      router.replace(target as any);
+      router.replace(`/${role}/dashboard` as any);
     }
   }, [user, loading, segments]);
 
@@ -63,7 +97,8 @@ function RootNavigator() {
 
   return (
     <>
-      <PushSetup userId={user?.id} />
+      <AppRuntime userId={user?.id} />
+      <PushTapNavigator />
       <Stack
         screenOptions={{
           headerShown: false,

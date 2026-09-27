@@ -72,6 +72,7 @@ export default function TeacherLayout() {
       <Tabs.Screen name="exams" options={{ href: null }} />
       <Tabs.Screen name="exam-editor" options={{ href: null }} />
       <Tabs.Screen name="alarm-diagnostics" options={{ href: null }} />
+      <Tabs.Screen name="chat/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

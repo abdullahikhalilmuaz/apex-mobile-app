@@ -72,6 +72,7 @@ export default function HeadmasterLayout() {
 
       <Tabs.Screen name="exams" options={{ href: null }} />
       <Tabs.Screen name="exam-view" options={{ href: null }} />
+      <Tabs.Screen name="chat/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

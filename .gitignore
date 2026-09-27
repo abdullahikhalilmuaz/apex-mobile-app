@@ -36,8 +36,12 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# example
 example
 
 # generated native folders
 /ios
 /android
+
+# secret folder (never commit)
+some secrete/

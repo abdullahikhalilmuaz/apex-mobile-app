@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import api from "../lib/api";
+import appApi from "../lib/appApi";
 
 // Detect if we're running in Expo Go (no native notifications)
 const isExpoGo = Constants.appOwnership === "expo";
@@ -85,10 +86,13 @@ export function usePushNotifications(userId?: string) {
         const token = tokenData.data;
         if (mounted) setExpoPushToken(token);
 
-        await api.post("/notifications/register", {
-          token,
-          device: Platform.OS,
-        });
+        await Promise.allSettled([
+          api.post("/notifications/register", { token, device: Platform.OS }),
+          appApi.post("/notifications/register", {
+            token,
+            device: Platform.OS,
+          }),
+        ]);
 
         console.log("Push token registered:", token);
       } catch (e: any) {

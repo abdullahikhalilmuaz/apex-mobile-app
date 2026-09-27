@@ -47,6 +47,7 @@ export default function ParentLayout() {
 
       {/* Hidden screens */}
       <Tabs.Screen name="child/[id]" options={{ href: null }} />
+      <Tabs.Screen name="chat/[id]" options={{ href: null }} />
     </Tabs>
   );
 }
